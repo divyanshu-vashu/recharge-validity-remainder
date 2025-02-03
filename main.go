@@ -4,7 +4,6 @@ import (
     "fmt"
     "log"
     "net/http"
-    "os"
     "github.com/gin-gonic/gin"
     "gorm.io/gorm"
     "gorm.io/driver/postgres"
@@ -113,13 +112,7 @@ func main() {
         }
     }
 
-    // Get port from environment variable
-    port := os.Getenv("PORT")
-    if port == "" {
-        port = "8000"  // Default to port 8000 for Koyeb
-    }
-
-    // Get port using = instead of :=
+    // Use config port directly
     port := config.GetPort()
     log.Printf("Server starting on port %s", port)
     r.Run("0.0.0.0:" + port)
