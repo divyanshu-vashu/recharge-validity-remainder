@@ -94,12 +94,12 @@ func main() {
         }
     }
 
-    // Get port from environment variable
+    // Get port from environment variable with proper health check port
     port := os.Getenv("PORT")
     if port == "" {
-        port = "8080"
+        port = "8000" // Change default port to match health check
     }
 
     log.Printf("Server starting on port %s", port)
-    r.Run("0.0.0.0:" + port)  // Update to bind to all interfaces
+    r.Run("0.0.0.0:" + port)
 }
