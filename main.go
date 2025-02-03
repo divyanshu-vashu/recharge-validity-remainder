@@ -69,6 +69,24 @@ func main() {
     r := gin.Default()
     gin.SetMode(gin.ReleaseMode)
 
+    // Add health check endpoint
+    r.GET("/health", func(c *gin.Context) {
+        // Check database connection
+        sqlDB, err := db.DB()
+        if err != nil {
+            c.JSON(http.StatusServiceUnavailable, gin.H{"status": "error", "message": "Database connection error"})
+            return
+        }
+        
+        // Ping database
+        if err := sqlDB.Ping(); err != nil {
+            c.JSON(http.StatusServiceUnavailable, gin.H{"status": "error", "message": "Database ping failed"})
+            return
+        }
+
+        c.JSON(http.StatusOK, gin.H{"status": "healthy"})
+    })
+
     // Serve static files
     r.Static("/static", "./static")
     r.LoadHTMLGlob("static/*.html")  // Update this line to load all HTML files
@@ -102,7 +120,7 @@ func main() {
     }
 
     // Get port using = instead of :=
-    port = config.GetPort()
+    port := config.GetPort()
     log.Printf("Server starting on port %s", port)
     r.Run("0.0.0.0:" + port)
 }
