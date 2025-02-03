@@ -30,6 +30,51 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/static/login.js"></script>
+    <!-- Remove this line -->
+    <!-- <script src="/static/login.js"></script> -->
+    <script>
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            });
+    
+            // Handle redirect response
+            if (response.redirected) {
+                window.location.href = response.url;
+                return;
+            }
+
+            // Only try to parse JSON if not redirected
+            const data = await response.json();
+            
+            if (response.ok) {
+                window.location.href = data.redirect || '/';
+            } else {
+                const errorMsg = document.getElementById('errorMessage');
+                errorMsg.textContent = data.error || 'Login failed';
+                errorMsg.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            const errorMsg = document.getElementById('errorMessage');
+            errorMsg.textContent = 'Login failed';
+            errorMsg.style.display = 'block';
+        }
+    });
+    </script>
 </body>
 </html>

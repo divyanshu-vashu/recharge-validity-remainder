@@ -69,8 +69,27 @@ func main() {
 
     // Initialize router after setting release mode
     r := gin.Default()
+    
+    // Add CORS middleware
+    r.Use(func(c *gin.Context) {
+        c.Header("Access-Control-Allow-Origin", c.GetHeader("Origin"))
+        c.Header("Access-Control-Allow-Credentials", "true")
+        c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+        c.Header("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT")
 
-    // Add health check endpoint
+        if c.Request.Method == "OPTIONS" {
+            c.AbortWithStatus(204)
+            return
+        }
+
+        c.Next()
+    })
+
+    // Serve static files first
+    r.Static("/static", "./static")
+    r.LoadHTMLGlob("static/*.html")
+
+    // Health check endpoint
     r.GET("/health", func(c *gin.Context) {
         // Check database connection
         sqlDB, err := db.DB()
@@ -88,13 +107,20 @@ func main() {
         c.JSON(http.StatusOK, gin.H{"status": "healthy"})
     })
 
-    // Serve static files
-    r.Static("/static", "./static")
-    r.LoadHTMLGlob("static/*.html")  // Update this line to load all HTML files
+    // Add check-user endpoint before protected routes
+    r.GET("/api/check-user", func(c *gin.Context) {
+        var user models.User
+        result := db.Where("username = ?", "admin69").First(&user)
+        if result.Error != nil {
+            c.JSON(http.StatusNotFound, gin.H{"error": "User not found", "details": result.Error.Error()})
+            return
+        }
+        c.JSON(http.StatusOK, gin.H{"message": "User exists", "username": user.Username})
+    })
     
     // Public routes
     r.GET("/login", func(c *gin.Context) {
-        c.HTML(http.StatusOK, "login.html", nil)  // Use http.StatusOK constant
+        c.HTML(http.StatusOK, "login.html", nil)
     })
     r.POST("/api/login", h.Login)
 
@@ -103,7 +129,7 @@ func main() {
     protected.Use(authRequired)
     {
         protected.GET("/", func(c *gin.Context) {
-            c.HTML(http.StatusOK, "index.html", nil)  // Use http.StatusOK constant
+            c.HTML(http.StatusOK, "index.html", nil)
         })
         
         api := protected.Group("/api")
@@ -114,7 +140,7 @@ func main() {
         }
     }
 
-    // Use config port directly
+    // Start server
     port := config.GetPort()
     log.Printf("Server starting on port %s", port)
     r.Run("0.0.0.0:" + port)

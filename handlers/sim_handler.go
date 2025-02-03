@@ -20,31 +20,35 @@ func NewHandler(db *gorm.DB) *Handler {
 func (h *Handler) AddSim(c *gin.Context) {
     var sim models.Sim
     if err := c.ShouldBindJSON(&sim); err != nil {
-        fmt.Printf("Error binding JSON: %v\n", err)
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
 
-    fmt.Printf("Received SIM data: %+v\n", sim)
+    // Set default dates if not provided
+    now := time.Now()
+    if sim.LastRechargeDate.IsZero() {
+        sim.LastRechargeDate = now
+    }
+    if sim.RechargeValidity.IsZero() {
+        sim.RechargeValidity = now.Add(30 * 24 * time.Hour) // 30 days validity
+    }
+    if sim.IncomingCallValidity.IsZero() {
+        sim.IncomingCallValidity = now.Add(45 * 24 * time.Hour) // 45 days validity
+    }
+    if sim.SimExpiry.IsZero() {
+        sim.SimExpiry = now.Add(90 * 24 * time.Hour) // 90 days validity
+    }
 
-    // Truncate time component to get only date
-    sim.LastRechargeDate = sim.LastRechargeDate.Truncate(24 * time.Hour)
-    
-    // Calculate validities (only dates)
-    sim.RechargeValidity = sim.LastRechargeDate.AddDate(0, 0, 28).Truncate(24 * time.Hour)
-    sim.IncomingValidity = sim.RechargeValidity.AddDate(0, 0, 7).Truncate(24 * time.Hour)
-    sim.SimExpiry = sim.IncomingValidity.AddDate(0, 0, 85).Truncate(24 * time.Hour)
+    // Debug log
+    fmt.Printf("Adding SIM with data: %+v\n", sim)
 
-    // Save to database
-    result := h.DB.Create(&sim)
-    if result.Error != nil {
-        fmt.Printf("Error saving to database: %v\n", result.Error)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+    if err := h.DB.Create(&sim).Error; err != nil {
+        fmt.Printf("Error creating SIM: %v\n", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
 
-    fmt.Printf("Successfully saved SIM with ID: %d\n", sim.ID)
-    c.JSON(http.StatusOK, sim)
+    c.JSON(http.StatusCreated, sim)
 }
 
 func (h *Handler) GetAllSims(c *gin.Context) {
@@ -59,40 +63,58 @@ func (h *Handler) GetAllSims(c *gin.Context) {
 
 // Add this new handler function
 func (h *Handler) UpdateSimRechargeDate(c *gin.Context) {
-    type UpdateRequest struct {
-        LastRechargeDate string `json:"lastRechargeDate" binding:"required"`
+    var updateData struct {
+        LastRechargeDate     string `json:"last_recharge_date"`
+        RechargeValidity     string `json:"recharge_validity"`
+        IncomingCallValidity string `json:"incoming_call_validity"`
+        SimExpiry            string `json:"sim_expiry"`
     }
 
-    simID := c.Param("id")
-    var updateData UpdateRequest
-    
     if err := c.ShouldBindJSON(&updateData); err != nil {
-        fmt.Printf("Binding error: %v\n", err)
+        fmt.Printf("JSON binding error: %v\n", err)
+        fmt.Printf("Received data: %+v\n", updateData)
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
 
-    // Parse the date string
-    lastRechargeDate, err := time.Parse("2006-01-02", updateData.LastRechargeDate)
-    if err != nil {
-        fmt.Printf("Date parsing error: %v\n", err)
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format"})
-        return
-    }
-
+    id := c.Param("id")
     var sim models.Sim
-    if err := h.DB.First(&sim, simID).Error; err != nil {
-        c.JSON(http.StatusNotFound, gin.H{"error": "SIM not found"})
+    if err := h.DB.First(&sim, id).Error; err != nil {
+        fmt.Printf("Database fetch error for ID %s: %v\n", id, err)
+        c.JSON(http.StatusNotFound, gin.H{"error": "Sim not found"})
         return
     }
 
-    // Update dates
-    sim.LastRechargeDate = lastRechargeDate
-    sim.RechargeValidity = lastRechargeDate.AddDate(0, 0, 28)
-    sim.IncomingValidity = sim.RechargeValidity.AddDate(0, 0, 7)
-    sim.SimExpiry = sim.IncomingValidity.AddDate(0, 0, 85)
+    // Parse and validate dates with error logging
+    layout := "2006-01-02"
+    
+    if lastRecharge, err := time.Parse(layout, updateData.LastRechargeDate); err == nil {
+        sim.LastRechargeDate = lastRecharge
+    } else {
+        fmt.Printf("Error parsing LastRechargeDate: %v\n", err)
+    }
+    
+    if rechargeVal, err := time.Parse(layout, updateData.RechargeValidity); err == nil {
+        sim.RechargeValidity = rechargeVal
+    } else {
+        fmt.Printf("Error parsing RechargeValidity: %v\n", err)
+    }
+    
+    if incomingVal, err := time.Parse(layout, updateData.IncomingCallValidity); err == nil {
+        sim.IncomingCallValidity = incomingVal
+    } else {
+        fmt.Printf("Error parsing IncomingCallValidity: %v\n", err)
+    }
+    
+    if simExp, err := time.Parse(layout, updateData.SimExpiry); err == nil {
+        sim.SimExpiry = simExp
+    } else {
+        fmt.Printf("Error parsing SimExpiry: %v\n", err)
+    }
 
+    fmt.Printf("Updating SIM with data: %+v\n", sim)
     if err := h.DB.Save(&sim).Error; err != nil {
+        fmt.Printf("Database save error: %v\n", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
