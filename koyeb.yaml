@@ -1,20 +1,28 @@
 name: mobilerecharge
 service:
+  app: mobilerecharge
   ports:
     - port: 8000
-      protocol: http
+      http: /
+  routes:
+    - path: /
+      port: 8000
   healthcheck:
-    port: 8000
-    path: /login
-    initialDelay: 10s
+    http:
+      path: /login
+      port: 8000
   env:
-    - name: PORT
+    - key: PORT
       value: "8000"
-    - name: GIN_MODE
-      value: "release"
-    - name: DATABASE_HOST
+    - key: DATABASE_HOST
       value: "ep-summer-dust-a1syu99u.ap-southeast-1.pg.koyeb.app"
-    - name: DATABASE_USER
+    - key: DATABASE_USER
       value: "vashu-admin"
-    - name: DATABASE_NAME
+    - key: DATABASE_NAME
       value: "koyebdb"
+    - key: DATABASE_PASSWORD
+      secret: db-password
+    - key: EMAIL_PASSWORD
+      secret: email-password
+    - key: GIN_MODE
+      value: "release"

@@ -2,7 +2,7 @@ package main
 
 import (
     "fmt"
-    "log"    // Add this import
+    "log"
     "net/http"
     "os"
     "github.com/gin-gonic/gin"
@@ -67,6 +67,7 @@ func main() {
 
     // Initialize router
     r := gin.Default()
+    gin.SetMode(gin.ReleaseMode)
 
     // Serve static files
     r.Static("/static", "./static")
@@ -94,12 +95,14 @@ func main() {
         }
     }
 
-    // Get port from environment variable with proper health check port
+    // Get port from environment variable
     port := os.Getenv("PORT")
     if port == "" {
-        port = "8000" // Change default port to match health check
+        port = "8000"  // Default to port 8000 for Koyeb
     }
 
+    // Get port using = instead of :=
+    port = config.GetPort()
     log.Printf("Server starting on port %s", port)
     r.Run("0.0.0.0:" + port)
 }

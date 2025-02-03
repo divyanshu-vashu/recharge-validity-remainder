@@ -2,18 +2,22 @@ package config
 
 import (
     "fmt"
-    "os"
-    "github.com/joho/godotenv"
 )
 
 func GetDBConfig() string {
-    godotenv.Load()
-
-    host := os.Getenv("DATABASE_HOST")
-    user := os.Getenv("DATABASE_USER")
-    password := os.Getenv("DATABASE_PASSWORD")
-    dbname := os.Getenv("DATABASE_NAME")
+    host := "ep-summer-dust-a1syu99u.ap-southeast-1.pg.koyeb.app"
+    user := "vashu-admin"
+    password := "npg_sjFa1wcy5WQp"
+    dbname := "koyebdb"
 
     return fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=require", 
         host, user, password, dbname)
+}
+
+func GetEmailPassword() string {
+    return "xfmz rlod pixm mjvi"
+}
+
+func GetPort() string {
+    return "8000"
 }

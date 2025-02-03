@@ -4,14 +4,13 @@ import (
     "fmt"
     "net/smtp"
     "time"
-    "os"
-    "github.com/joho/godotenv"
 )
 
 const (
     smtpHost = "smtp.gmail.com"
     smtpPort = "587"
     fromEmail = "vdkalife@gmail.com"
+    emailPassword = "xfmz rlod pixm mjvi"
 )
 
 var toEmails = []string{
@@ -23,16 +22,11 @@ var toEmails = []string{
 type EmailService struct{}
 
 func NewEmailService() *EmailService {
-    // Load .env file
-    if err := godotenv.Load(); err != nil {
-        fmt.Printf("Error loading .env file: %v\n", err)
-    }
     return &EmailService{}
 }
 
 func (s *EmailService) SendExpiryNotification(simName string, number string, expiryDate time.Time, daysLeft int) error {
-    password := os.Getenv("EMAIL_PASSWORD")
-    auth := smtp.PlainAuth("", fromEmail, password, smtpHost)
+    auth := smtp.PlainAuth("", fromEmail, emailPassword, smtpHost)
     
     subject := "SIM Recharge Reminder"
     body := fmt.Sprintf(
