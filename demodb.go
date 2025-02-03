@@ -19,7 +19,7 @@ type Sim struct {
 
 func main() {
     // Database connection string
-    dsn := "host=ep-summer-dust-a1syu99u.ap-southeast-1.pg.koyeb.app user=vashu-admin password=npg_sjFa1wcy5WQp dbname=koyebdb sslmode=require"
+    dsn := ""  //write your postgresql 
     
     // Open database connection
     db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
