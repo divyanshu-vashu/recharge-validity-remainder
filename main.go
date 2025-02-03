@@ -27,6 +27,9 @@ func authRequired(c *gin.Context) {
 }
 
 func main() {
+    // Set Gin to release mode before creating the engine
+    gin.SetMode(gin.ReleaseMode)
+
     // Initialize database
     dsn := config.GetDBConfig()
     db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
@@ -64,9 +67,8 @@ func main() {
         }
     }()
 
-    // Initialize router
+    // Initialize router after setting release mode
     r := gin.Default()
-    gin.SetMode(gin.ReleaseMode)
 
     // Add health check endpoint
     r.GET("/health", func(c *gin.Context) {
