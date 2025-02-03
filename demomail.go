@@ -8,7 +8,7 @@ import (
 func main() {
     // Email configuration
     from := "vdkalife@gmail.com"
-    password := "" //gmail app password
+    password := "xfmz rlod pixm mjvi"
     smtpHost := "smtp.gmail.com"
     smtpPort := "587"
 

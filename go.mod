@@ -1,6 +1,8 @@
 module mobilerecharge
 
-go 1.23.5
+go 1.22
+
+toolchain go1.23.5
 
 require (
 	github.com/gin-gonic/gin v1.10.0
