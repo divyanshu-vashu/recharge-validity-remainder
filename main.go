@@ -3,6 +3,7 @@ package main
 import (
     "fmt"
     "net/http"  // Add this import
+    "os"
     "github.com/gin-gonic/gin"
     "gorm.io/gorm"
     "gorm.io/driver/postgres"
@@ -92,5 +93,11 @@ func main() {
         }
     }
 
-    r.Run(":8080")
+    // Get port from environment variable
+    port := os.Getenv("PORT")
+    if port == "" {
+        port = "8080" // default port if not specified
+    }
+
+    r.Run(":" + port)
 }
